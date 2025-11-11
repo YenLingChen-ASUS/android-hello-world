@@ -1,4 +1,4 @@
-name: Android CI - Build APK
+name: Android CI/CD - Build APK and Release to Google Dirve
 
 on:
   push:
