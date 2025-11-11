@@ -1,0 +1,27 @@
+name: Android CD - Upload APK to GitHub Release
+
+on:
+  workflow_run:
+    workflows: ["Android CI - Build APK"]  # 連動你 CI workflow 名稱
+    types:
+      - completed
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 下載 CI 上傳的 artifact
+      - name: Download APK artifact from CI
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release
+          path: ./apk
+
+      # 建立 GitHub Release 並上傳 APK
+      - name: Create GitHub Release & upload APK
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ github.run_number }}        # 每次自動生成版本號
+          name: "Test Deployment ${{ github.run_number }}"
+          artifacts: ./apk/*                    # 上傳 CI build 的 APK
