@@ -21,15 +21,15 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+      
+      - name: Check current directory
+        run: ls -R
 
       - name: Bump versionCode automatically
         run: |
           VERSION_CODE=$(date +%s)
           echo "New versionCode=$VERSION_CODE"
-          sed -i "s/versionCode [0-9]\+/versionCode ${VERSION_CODE}/" app/build.gradle
-
-      - name: Check current directory
-        run: ls -R
+          sed -i "s/versionCode [0-9]\+/versionCode ${VERSION_CODE}/" app/build.gradle.kts
       
       - name: Build APK (Release)
         run: ./gradlew assembleRelease
