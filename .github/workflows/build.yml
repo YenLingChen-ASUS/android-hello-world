@@ -44,6 +44,11 @@ jobs:
       - name: Build APK (Release)
         run: ./gradlew assembleRelease
 
+      - name: List all APK files (debugging)
+        run: |
+          echo "Listing all APKs under app/build/outputs:"
+          find app/build/outputs -type f -name "*.apk" || true
+          
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
