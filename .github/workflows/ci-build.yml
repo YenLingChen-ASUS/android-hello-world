@@ -58,3 +58,10 @@ jobs:
         with:
           name: app-release
           path: ${{ env.APK_PATH }}
+
+      - name: Create GitHub Release & upload APK
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ github.run_number }}               # 每次自動生成版本號
+          name: "Test Deployment ${{ github.run_number }}"
+          artifacts: ${{ env.APK_PATH }}               # 上傳剛 build 的 APK
