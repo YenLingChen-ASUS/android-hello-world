@@ -65,9 +65,10 @@ jobs:
       - name: Create GitHub Release & upload APK
         uses: ncipollo/release-action@v1
         with:
-          tag: v${{ github.run_number }}
+          tag: v${{ github.run_number }}-${{ github.sha }}
           name: "Test Deployment ${{ github.run_number }}"
           artifacts: ${{ env.APK_PATH }}
+
 
       - name: Install rclone
         run: |
