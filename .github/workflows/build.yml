@@ -44,14 +44,17 @@ jobs:
       - name: Build APK (Release)
         run: ./gradlew assembleRelease
       
-      - name: Rename APK
+      - name: Rename APK with versionName and timestamp
         run: |
           VERSION_NAME=$(grep 'versionName =' app/build.gradle.kts | grep -o '".*"' | tr -d '"')
-          echo "New APK versionName=$VERSION_NAME"
-          mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release.apk
-      
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          NEW_APK_NAME="app-release-${VERSION_NAME}-${TIMESTAMP}.apk"
+          echo "Renaming APK to $NEW_APK_NAME"
+          mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/$NEW_APK_NAME
+          echo "APK_PATH=app/build/outputs/apk/release/$NEW_APK_NAME" >> $GITHUB_ENV
+
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: app/build/outputs/apk/release/app-release.apk
+          path: ${{ env.APK_PATH }}
