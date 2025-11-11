@@ -28,6 +28,9 @@ jobs:
           echo "New versionCode=$VERSION_CODE"
           sed -i "s/versionCode [0-9]\+/versionCode ${VERSION_CODE}/" app/build.gradle
 
+      - name: Check current directory
+        run: ls -R
+      
       - name: Build APK (Release)
         run: ./gradlew assembleRelease
 
