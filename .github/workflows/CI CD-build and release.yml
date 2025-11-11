@@ -50,7 +50,7 @@ jobs:
       - name: Rename APK with versionName and timestamp
         run: |
           VERSION_NAME=$(grep 'versionName =' app/build.gradle.kts | grep -o '".*"' | tr -d '"')
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          TIMESTAMP=$(TZ=Asia/Taipei date +%Y%m%d%H%M%S)
           NEW_APK_NAME="app-release-${VERSION_NAME}-${TIMESTAMP}.apk"
           echo "Renaming APK to $NEW_APK_NAME"
           mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/$NEW_APK_NAME
