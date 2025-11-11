@@ -68,3 +68,20 @@ jobs:
           tag: v${{ github.run_number }}               # 每次自動生成版本號
           name: "Test Deployment ${{ github.run_number }}"
           artifacts: ${{ env.APK_PATH }}               # 上傳剛 build 的 APK
+
+      - name: Install rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+
+      - name: Configure rclone
+        run: |
+          mkdir -p ~/.config/rclone
+          echo "$RCLONE_CONF" > ~/.config/rclone/rclone.conf
+        env:
+          RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
+
+      - name: Upload APK to Google Drive
+        run: |
+          FILENAME=$(basename "${{ env.APK_PATH }}")
+          echo "Uploading $FILENAME to Google Drive..."
+          rclone copy "${{ env.APK_PATH }}" gdrive:/MyAppBuilds/$FILENAME -P   
