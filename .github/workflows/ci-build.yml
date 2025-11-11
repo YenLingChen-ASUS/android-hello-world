@@ -5,6 +5,9 @@ on:
     branches:
       - main   # 或你想監控的分支
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
