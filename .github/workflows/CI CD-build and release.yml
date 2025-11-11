@@ -3,7 +3,7 @@ name: Android CI/CD - Build APK and Release to Google Dirve
 on:
   push:
     branches:
-      - main   # 或你想監控的分支
+      - main
 
 permissions:
   contents: write
@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17  # 根據你專案需要修改
+          java-version: 17
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
@@ -65,9 +65,9 @@ jobs:
       - name: Create GitHub Release & upload APK
         uses: ncipollo/release-action@v1
         with:
-          tag: v${{ github.run_number }}               # 每次自動生成版本號
+          tag: v${{ github.run_number }}
           name: "Test Deployment ${{ github.run_number }}"
-          artifacts: ${{ env.APK_PATH }}               # 上傳剛 build 的 APK
+          artifacts: ${{ env.APK_PATH }}
 
       - name: Install rclone
         run: |
