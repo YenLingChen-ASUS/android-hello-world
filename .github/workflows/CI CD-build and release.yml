@@ -86,3 +86,25 @@ jobs:
           FILENAME=$(basename "${{ env.APK_PATH }}")
           echo "Uploading $FILENAME to Google Drive..."
           rclone copy "${{ env.APK_PATH }}" gdrive:/MyAppBuilds/$FILENAME -P   
+
+      - name: Notify Build Result via Email
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.example.com
+          server_port: 465
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Build ${{ job.status }} - ${{ github.workflow }}
+          body: |
+            Workflow: ${{ github.workflow }}
+            Job: build
+            Status: ${{ job.status }}
+            Triggered by: ${{ github.actor }}
+            Commit: ${{ github.sha }}
+            APK: ${{ env.APK_PATH }}
+          to: ${{ github.actor }}@example.com  # 需要替換成 trigger user 的 email 或固定收件人
+          from: "ci@example.com"
+          secure: true
+
+          
