@@ -87,14 +87,21 @@ jobs:
           echo "Uploading $FILENAME to Google Drive..."
           rclone copy "${{ env.APK_PATH }}" gdrive:/MyAppBuilds/$FILENAME -P   
 
+      - name: Get actor email
+        id: get_email
+        run: |
+          actor="${{ github.actor }}"
+          email="${actor%-Asus}@asus.com"
+          echo "email=$email" >> $GITHUB_OUTPUT
+
       - name: Notify Build Result via Email
         if: always()
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: smtp.example.com
+          server_address: smtp.gmail.com
           server_port: 465
-          username: ${{ secrets.SMTP_USER }}
-          password: ${{ secrets.SMTP_PASSWORD }}
+          username: ${{ secrets.GMAIL_USER }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
           subject: Build ${{ job.status }} - ${{ github.workflow }}
           body: |
             Workflow: ${{ github.workflow }}
@@ -103,8 +110,6 @@ jobs:
             Triggered by: ${{ github.actor }}
             Commit: ${{ github.sha }}
             APK: ${{ env.APK_PATH }}
-          to: ${{ github.actor }}@example.com  # 需要替換成 trigger user 的 email 或固定收件人
-          from: "ci@example.com"
+          to: ${{ steps.get_email.outputs.email }}
+          from: ${{ secrets.GMAIL_USER }}
           secure: true
-
-          
