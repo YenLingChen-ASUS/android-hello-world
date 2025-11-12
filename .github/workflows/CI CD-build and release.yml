@@ -91,8 +91,9 @@ jobs:
         id: get_email
         run: |
           actor="${{ github.actor }}"
-          email="${actor%-Asus}@asus.com"
-          echo "email=$email" >> $GITHUB_OUTPUT
+          email=$(echo "$actor" | sed 's/-Asus$//')
+          echo "mail to: $email@asus.com"
+          echo "email=$email@asus.com" >> $GITHUB_OUTPUT
 
       - name: Notify Build Result via Email
         if: always()
