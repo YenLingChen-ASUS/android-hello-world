@@ -91,7 +91,7 @@ jobs:
         id: get_email
         run: |
           actor="${{ github.actor }}"
-          email=$(echo "$actor" | sed 's/-Asus$//')
+          email=$(echo "$actor" | sed 's/-[Aa][Ss][Uu][Ss]$//')
           echo "mail to: $email@asus.com"
           echo "email=$email@asus.com" >> $GITHUB_OUTPUT
 
