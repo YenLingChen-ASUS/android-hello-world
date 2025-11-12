@@ -87,14 +87,14 @@ jobs:
           echo "Uploading $FILENAME to Google Drive..."
           rclone copy "${{ env.APK_PATH }}" gdrive:/MyAppBuilds/$FILENAME -P   
 
-      - name: Get actor email
+      - name: Get actor email from variables
         id: get_email
         run: |
           actor="${{ github.actor }}"
-          echo "actor: $actor"
-          email=$(echo "$actor" | sed 's/-[Aa][Ss][Uu][Ss]$//')
-          echo "mail to: $email@asus.com"
-          echo "email=$email@asus.com" >> $GITHUB_OUTPUT
+          table="${{ vars.EMAIL_TABLE }}"
+          email=$(echo "$table" | tr ',' '\n' | grep "^$actor:" | cut -d: -f2)
+          echo "mail to: $email"
+          echo "email=$email" >> $GITHUB_OUTPUT
 
       - name: Notify Build Result via Email
         if: always()
