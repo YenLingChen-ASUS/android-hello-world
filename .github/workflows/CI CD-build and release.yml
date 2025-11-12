@@ -1,4 +1,4 @@
-name: Android CI/CD - Build APK and Release to Google Drive
+name: Android CI/CD - Test, Build, Upload & Notify
 
 on:
   push:
@@ -10,39 +10,12 @@ permissions:
   contents: write
 
 jobs:
-  # 🧪 1️⃣ 單元測試 Job
-  test:
-    name: Run Unit Tests
+  android-ci:
+    name: Android CI/CD Pipeline
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Run unit tests
-        id: unit_test
-        run: ./gradlew test
-
-  # 🏗️ 2️⃣ Build & Upload Job（僅在測試成功時執行）
-  build_and_upload:
-    name: Build and Upload APK
-    runs-on: ubuntu-latest
-    needs: test
-    if: needs.test.result == 'success'   # ✅ 僅測試通過才執行
-
-    steps:
+      # 🧰 初始化環境
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -65,19 +38,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Bump versionCode automatically
-        run: |
-          VERSION_CODE=$(date +%s)
-          echo "New versionCode=$VERSION_CODE"
-          sed -i "s/versionCode [0-9]\+/versionCode ${VERSION_CODE}/" app/build.gradle.kts
-
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # 🧪 單元測試階段
+      - name: Run Unit Tests
+        id: unit_test
+        run: ./gradlew test
+        continue-on-error: true  # 不中斷 workflow，但會保留測試結果
+
+      # 🏗️ Build APK（僅測試成功才進行）
       - name: Build APK (Release)
+        if: steps.unit_test.outcome == 'success'
         run: ./gradlew assembleRelease
 
+      # 🔖 Rename APK
       - name: Rename APK with versionName and timestamp
+        if: steps.unit_test.outcome == 'success'
         run: |
           VERSION_NAME=$(grep 'versionName =' app/build.gradle.kts | grep -o '".*"' | tr -d '"')
           TIMESTAMP=$(TZ=Asia/Taipei date +%Y%m%d%H%M%S)
@@ -86,11 +63,14 @@ jobs:
           mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/$NEW_APK_NAME
           echo "APK_PATH=app/build/outputs/apk/release/$NEW_APK_NAME" >> $GITHUB_ENV
 
+      # ☁️ Upload to Google Drive
       - name: Install rclone
+        if: steps.unit_test.outcome == 'success'
         run: |
           curl https://rclone.org/install.sh | sudo bash
 
       - name: Configure rclone
+        if: steps.unit_test.outcome == 'success'
         run: |
           mkdir -p ~/.config/rclone
           echo "$RCLONE_CONF" > ~/.config/rclone/rclone.conf
@@ -98,20 +78,14 @@ jobs:
           RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
 
       - name: Upload APK to Google Drive
+        if: steps.unit_test.outcome == 'success'
         run: |
           FILENAME=$(basename "${{ env.APK_PATH }}")
           echo "Uploading $FILENAME to Google Drive..."
-          rclone copy "${{ env.APK_PATH }}" gdrive:/MyAppBuilds/$FILENAME -P
+          rclone copy "${{ env.APK_PATH }}" gdrive:/MyAppBuilds/$FILENAME -P   
 
-  # 📧 3️⃣ Email 通知 Job（無論前面是否成功都要執行）
-  notify:
-    name: Notify Build Result via Email
-    runs-on: ubuntu-latest
-    needs: [test, build_and_upload]   # 等兩個 job 都跑完
-    if: always()                      # ✅ 永遠執行，不論成功或失敗
-
-    steps:
-      - name: Get actor email from variables
+      # 📧 Email 通知（無論成功或失敗都寄）
+      - name: Get actor email
         id: get_email
         run: |
           actor="${{ github.actor }}"
@@ -121,19 +95,20 @@ jobs:
           echo "email=$email" >> $GITHUB_OUTPUT
 
       - name: Send notification email
+        if: always()
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
           server_port: 465
           username: ${{ secrets.GMAIL_USER }}
           password: ${{ secrets.GMAIL_APP_PASSWORD }}
-          subject: Build ${{ needs.build_and_upload.result || needs.test.result }} - ${{ github.workflow }}
+          subject: Build ${{ steps.unit_test.outcome }} - ${{ github.workflow }}
           body: |
             Workflow: ${{ github.workflow }}
-            Test Job: ${{ needs.test.result }}
-            Build Job: ${{ needs.build_and_upload.result }}
+            Unit Test: ${{ steps.unit_test.outcome }}
             Triggered by: ${{ github.actor }}
             Commit: ${{ github.sha }}
+            APK: ${{ env.APK_PATH || 'No build (tests failed)' }}
           to: ${{ steps.get_email.outputs.email }}
           from: ${{ secrets.GMAIL_USER }}
           secure: true
