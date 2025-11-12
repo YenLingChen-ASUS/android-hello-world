@@ -45,6 +45,11 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       
+      # 🧪 Run Unit Tests
+      - name: Run unit tests
+        run: ./gradlew test
+        continue-on-error: true
+      
       - name: Build APK (Release)
         run: ./gradlew assembleRelease
       
